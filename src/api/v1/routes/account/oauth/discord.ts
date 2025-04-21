@@ -23,7 +23,6 @@ discordRouter.post("/register", async (req, res) => {
 		const user: IUser = {
 			str_username: user_datas.username,
 			str_email: user_datas.email,
-			str_referral: req.query.referral as string,
 		};
 		const newUser: IUser = await createUser(user);
 		if (newUser === null) {

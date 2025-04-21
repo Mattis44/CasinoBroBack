@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllUsers, getReferralCodeById, getUserById, getUserQuotesById, getUsersBySearch } from "../../controller/userController";
+import { getUserById, getUsersBySearch } from "../../controller/userController";
 import { IUser } from "../../interfaces/IUser";
 import { decodeToken } from "../../utils/hash";
 
@@ -38,16 +38,6 @@ userRouter.get("/search", async (req, res) => {
 		}
 		const users: IUser[] = await getUsersBySearch(search, 10);
 		res.json(users);
-	} catch (error) {
-		res.status(500).json({ error: "Internal server error" });
-	}
-});
-
-userRouter.get("/quotes", async (req, res) => {
-	try {
-		const { id_user } = req.body;
-		const quotes = await getUserQuotesById(id_user);
-		res.json(quotes);
 	} catch (error) {
 		res.status(500).json({ error: "Internal server error" });
 	}

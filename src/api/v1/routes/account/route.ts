@@ -39,7 +39,6 @@ accountRouter.post("/login", async (req, res) => {
                 str_username: user.str_username,
                 str_email: user.str_email,
                 bl_admin: user.bl_admin,
-                avatar: user.avatar,
             };
             res.json({
                 token_access: await generateToken({
@@ -69,7 +68,6 @@ accountRouter.post("/register", async (req, res) => {
             str_username: req.query.str_username as string,
             str_email: req.query.str_email as string,
             str_password: await hashPassword(req.query.str_password as string),
-            str_referral: req.query.str_referral as string,
         };
         const newUser: IUser = await createUser(user);
 
@@ -108,7 +106,6 @@ accountRouter.post("/me", async (req, res) => {
                 str_username: user.str_username,
                 str_email: user.str_email,
                 bl_admin: user.bl_admin,
-                avatar: user.avatar,
             };
             const UpdatedAccessToken = await generateToken({
                 ...formattedUser,
@@ -130,7 +127,6 @@ accountRouter.post("/me", async (req, res) => {
                     str_username: user.str_username,
                     str_email: user.str_email,
                     bl_admin: user.bl_admin,
-                    avatar: user.avatar,
                 };
                 const UpdatedAccessToken = await generateToken({
 					...formattedUser,
