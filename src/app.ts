@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import { authenticateToken } from "./api/v1/middleware/authenticateToken";
 import cors from "cors";
 import discordRouter from "./api/v1/routes/account/oauth/discord";
+import blackjackRouter from "./api/v1/routes/blackjack/route";
 
 
 
@@ -33,6 +34,8 @@ app.use(`${API_BASE_PATH}/user`, authenticateToken, userRouter);
 
 app.use(`${API_BASE_PATH}/account`, accountRouter);
 app.use(`${API_BASE_PATH}/account/discord`, discordRouter);
+
+app.use(`${API_BASE_PATH}/blackjack`, authenticateToken, blackjackRouter);
 
 
 app.listen(PORT, () => {

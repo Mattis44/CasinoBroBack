@@ -2,7 +2,6 @@
 import { createClient } from 'redis';
 import dotenv from 'dotenv';
 dotenv.config();
-
 const redisClient = createClient({
     url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
     password: process.env.REDIS_PASSWORD,
@@ -23,7 +22,7 @@ redisClient.on('ready', () => {
 // Function to set an object in Redis
 export async function setObject(key: string, obj: any) {
     try {
-        await redisClient.set(key, JSON.stringify(obj));
+        await redisClient.set(key, JSON.stringify(obj), {EX: 60 * 60});
         console.log(`Object set for key: ${key}`);
     } catch (err) {
         console.error('Error setting object:', err);
