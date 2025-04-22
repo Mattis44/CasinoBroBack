@@ -22,7 +22,8 @@ blackjackRouter.post("/bet", async (req, res) => {
             formattedDealerCards,
             playerHandValue,
             dealerHandValue,
-            hash
+            hash,
+            status,
         } = await initBlackjackGame(id_user, bet_amount);
         res.status(200).json({
             gameId,
@@ -31,6 +32,7 @@ blackjackRouter.post("/bet", async (req, res) => {
             playerHandValue,
             dealerHandValue,
             hash,
+            gameStatus: "blackjack",
         });
     } catch (error: any) {
         res.status(500).json(error.message);

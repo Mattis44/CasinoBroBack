@@ -5,10 +5,11 @@ const gameKey = "blackjack:game:user";
 
 const seededRandom = (seed: number) => {
     return function () {
-        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        seed |= 0;
+        seed = (seed + 0x6d2b79f5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
 };
 
@@ -37,11 +38,23 @@ export const shuffleDeck = (deck: any[]) => {
 
 const suits = ["spades", "hearts", "diamonds", "clubs"];
 const values = [
-    "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
+    "A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "J",
+    "Q",
+    "K",
 ];
 
 const valueMap = {
-    "A": [1, 11],
+    A: [1, 11],
     "2": 2,
     "3": 3,
     "4": 4,
@@ -51,23 +64,26 @@ const valueMap = {
     "8": 8,
     "9": 9,
     "10": 10,
-    "J": 10,
-    "Q": 10,
-    "K": 10,
+    J: 10,
+    Q: 10,
+    K: 10,
 };
 
-const fullDeck = () => {
+const fullDeck = (numDecks = 1) => {
     const deck = [];
-    for (const suit of suits) {
-        for (const value of values) {
-            deck.push({ suit, value });
+    for (let d = 0; d < numDecks; d++) {
+        for (const suit of suits) {
+            for (const value of values) {
+                deck.push({ suit, value });
+            }
         }
     }
     return deck;
 };
 
-
-const calculateHandValue = (cards: { suit: string; value: keyof typeof valueMap }[]) => {
+const calculateHandValue = (
+    cards: { suit: string; value: keyof typeof valueMap }[]
+) => {
     let value = 0;
     let aces = 0;
 
@@ -88,16 +104,24 @@ const calculateHandValue = (cards: { suit: string; value: keyof typeof valueMap 
     return value;
 };
 
-
-export const initBlackjackGame = async (id_user: string, bet_amount: number) => {
+export const initBlackjackGame = async (
+    id_user: string,
+    bet_amount: number
+) => {
     try {
+        // Check if the user already has a game in progress
+        // Check if the user has enough balance
+        // Remove the bet amount from the user's balance
         const gameId = crypto.randomUUID();
-        let { shuffledDeck: deck, hash } = shuffleDeck(fullDeck());
+        let { shuffledDeck: deck, hash } = shuffleDeck(fullDeck(6));
 
         const playerCards = [deck.pop(), deck.pop()];
         const dealerCards = [deck.pop(), deck.pop()];
 
-        const formatCard = (card: { suit: string; value: keyof typeof valueMap }) => ({
+        const formatCard = (card: {
+            suit: string;
+            value: keyof typeof valueMap;
+        }) => ({
             ...card,
             equal: valueMap[card.value] || 0,
         });
@@ -106,7 +130,10 @@ export const initBlackjackGame = async (id_user: string, bet_amount: number) => 
         const formattedDealerCards = dealerCards.map(formatCard);
 
         const playerHandValue = calculateHandValue(formattedPlayerCards);
-        const dealerHandValue = calculateHandValue(formattedDealerCards[0] ? [formattedDealerCards[0]] : []);
+        const dealerHandValue = calculateHandValue(
+            formattedDealerCards[0] ? [formattedDealerCards[0]] : []
+        );
+        let status = "in_progress";
 
         const gameState = {
             gameId,
@@ -115,14 +142,18 @@ export const initBlackjackGame = async (id_user: string, bet_amount: number) => 
             playerCards: formattedPlayerCards,
             dealerCards: formattedDealerCards,
             remainingDeck: deck,
-            status: "in_progress",
+            status,
             createdAt: new Date(),
             playerHandValue,
             dealerHandValue,
             hash,
         };
-
-        await setObject(`${gameKey}:${id_user}`, gameState);
+        if (playerHandValue === 21) {
+            status = "blackjack";
+            // Add logic to handle blackjack win
+        } else {
+            await setObject(`${gameKey}:${id_user}`, gameState);
+        }
 
         return {
             gameId,
@@ -131,8 +162,9 @@ export const initBlackjackGame = async (id_user: string, bet_amount: number) => 
             playerHandValue,
             dealerHandValue,
             hash,
+            status,
         };
-} catch (error) {
+    } catch (error) {
         console.error("Error initializing blackjack game:", error);
         throw error;
     }
