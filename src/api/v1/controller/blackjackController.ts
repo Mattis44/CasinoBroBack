@@ -37,7 +37,7 @@ export const shuffleDeck = (deck: any[]) => {
 };
 
 const suits = ["spades", "hearts", "diamonds", "clubs"];
-const values = [
+const valuesA = [
     "A",
     "2",
     "3",
@@ -51,6 +51,21 @@ const values = [
     "J",
     "Q",
     "K",
+];
+const values = [
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
 ];
 
 const valueMap = {
@@ -125,13 +140,13 @@ export const initBlackjackGame = async (
             value: keyof typeof valueMap;
         }) => ({
             ...card,
-            equal: valueMap[card.value] || 0,
+            equal: valueMap[card.value as keyof typeof valueMap] || 0,
         });
 
         const formattedPlayerCards = playerCards.map(formatCard);
         const formattedDealerCards = dealerCards.map(formatCard);
 
-        const playerHandValue = calculateHandValue(formattedPlayerCards);
+        const playerHandValue = [calculateHandValue(formattedPlayerCards)];
         const dealerHandValue = calculateHandValue(
             formattedDealerCards[0] ? [formattedDealerCards[0]] : []
         );
@@ -141,7 +156,10 @@ export const initBlackjackGame = async (
             gameId,
             id_user,
             bet_amount,
-            playerCards: formattedPlayerCards,
+            playerCards: {
+                firstHand: formattedPlayerCards,
+                secondHand: [],
+            },
             dealerCards: formattedDealerCards,
             remainingDeck: deck,
             status,
@@ -151,7 +169,7 @@ export const initBlackjackGame = async (
             dealerHiddenCard,
             hash,
         };
-        if (playerHandValue === 21) {
+        if (playerHandValue[0] === 21) {
             status = "blackjack";
             // Add logic to handle blackjack win
         } else {
@@ -187,119 +205,151 @@ export const retrieveGameState = async (id_user: string) => {
     }
 };
 
-export const hitCard = async (gameState: any) => {
-    const { remainingDeck, playerCards } = gameState;
-    if (remainingDeck.length === 0) {
-        throw new Error("No cards left in the deck.");
+export async function hitCard(gameState: any, handIndex: number = 0) {
+    const hand =
+        handIndex === 0
+            ? gameState.playerCards.firstHand
+            : gameState.playerCards.secondHand;
+    const value =
+        handIndex === 0
+            ? gameState.playerHandValue[0]
+            : gameState.playerHandValue[1];
+
+    if (value >= 21) {
+        throw new Error("Cannot hit, hand is already 21 or more.");
     }
 
-    const newCard = remainingDeck.pop();
-    playerCards.push(newCard);
+    const card = gameState.remainingDeck.pop();
+    hand.push(card);
 
-    const newPlayerHandValue = calculateHandValue(playerCards);
-    await setObject(`${gameKey}:${gameState.id_user}`, {
-        ...gameState,
-        playerCards,
-        remainingDeck,
-        playerHandValue: newPlayerHandValue,
-    });
+    gameState.playerHandValue[handIndex] = calculateHandValue(hand);
 
-    const busted = newPlayerHandValue > 21;
-    let status = gameState.status;
-    if (busted) {
-        status = "bust";
-        // Add logic to handle bust
-    } else if (newPlayerHandValue === 21) {
-        status = "blackjack";
-        // Add logic to handle blackjack win
+    // Check for bust
+    if (gameState.playerHandValue[handIndex] > 21) {
+        gameState.status = "bust";
     }
+
+    await setObject(`${gameKey}:${gameState.id_user}`, gameState);
 
     return {
         gameId: gameState.gameId,
-        formattedPlayerCards: playerCards.map(
-            (card: { suit: string; value: keyof typeof valueMap }) => ({
-                ...card,
-                equal: valueMap[card.value] || 0,
-            })
-        ),
-        formattedDealerCards: gameState.dealerCards.map(
-            (card: { suit: string; value: keyof typeof valueMap }) => ({
-                ...card,
-                equal: valueMap[card.value] || 0,
-            })
-        ),
-        playerHandValue: newPlayerHandValue,
+        playerCards: gameState.playerCards,
+        dealerCards: gameState.dealerCards,
+        playerHandValue: gameState.playerHandValue,
         dealerHandValue: gameState.dealerHandValue,
         hash: gameState.hash,
-        status,
+        gameStatus: gameState.status,
     };
-};
+}
 
-export const stand = async (gameState: any) => {
+export const stand = async (
+    gameState: any,
+    handIndex: number = 0,
+    splitMode: boolean = false
+) => {
     const { remainingDeck, dealerCards, dealerHiddenCard } = gameState;
     if (remainingDeck.length === 0) {
         throw new Error("No cards left in the deck.");
     }
 
-    // Add the dealer's hidden card to their hand
-    dealerCards.push(dealerHiddenCard);
-    gameState.dealerHandValue = calculateHandValue(dealerCards);
+    const isLastHand = !splitMode || handIndex === 1;
 
-    // Dealer draws cards until their hand value is at least 17
-    while (gameState.dealerHandValue < 17) {
-        const newCard = remainingDeck.pop();
-        dealerCards.push(newCard);
+    if (isLastHand) {
+        if (dealerHiddenCard) {
+            dealerCards.push(dealerHiddenCard);
+            gameState.dealerHiddenCard = null;
+        }
         gameState.dealerHandValue = calculateHandValue(dealerCards);
+
+        while (gameState.dealerHandValue < 17) {
+            const newCard = remainingDeck.pop();
+            dealerCards.push(newCard);
+            gameState.dealerHandValue = calculateHandValue(dealerCards);
+        }
     }
 
-    const playerBusted = gameState.playerHandValue > 21;
+    const playerHandValue = gameState.playerHandValue[handIndex];
+    const playerBusted = playerHandValue > 21;
     const dealerBusted = gameState.dealerHandValue > 21;
 
-    let status = "stand";
+    let handStatus = "stand";
+
     if (playerBusted) {
-        status = "bust";
-        // Add logic to handle bust
-    } else if (dealerBusted) {
-        status = "dealer_bust";
-        // Add logic to handle dealer bust
-    } else if (gameState.playerHandValue > gameState.dealerHandValue) {
-        status = "win";
-        // Add logic to handle win
-    } else if (gameState.playerHandValue < gameState.dealerHandValue) {
-        status = "lose";
-        // Add logic to handle lose
+        handStatus = "bust";
+    } else if (isLastHand) {
+        if (dealerBusted) {
+            handStatus = "dealer_bust";
+        } else if (playerHandValue > gameState.dealerHandValue) {
+            handStatus = "win";
+        } else if (playerHandValue < gameState.dealerHandValue) {
+            handStatus = "lose";
+        } else {
+            handStatus = "push";
+        }
+    }
+
+    if (splitMode) {
+        if (!Array.isArray(gameState.status)) {
+            gameState.status = [];
+        }
+        gameState.status[handIndex] = handStatus;
+
+        // Check the status of the first hand if handIndex is 1
+        if (handIndex === 1 && gameState.status[0] === "stand") {
+            const firstHandValue = gameState.playerHandValue[0];
+            const firstHandBusted = firstHandValue > 21;
+
+            if (firstHandBusted) {
+                gameState.status[0] = "bust";
+            } else if (dealerBusted) {
+                gameState.status[0] = "dealer_bust";
+            } else if (firstHandValue > gameState.dealerHandValue) {
+                gameState.status[0] = "win";
+            } else if (firstHandValue < gameState.dealerHandValue) {
+                gameState.status[0] = "lose";
+            } else {
+                gameState.status[0] = "push";
+            }
+        }
     } else {
-        status = "push";
-        // Add logic to handle push
+        gameState.status = handStatus;
     }
 
     await setObject(`${gameKey}:${gameState.id_user}`, {
         ...gameState,
         dealerCards,
         remainingDeck,
-        status,
+        status: gameState.status,
     });
+
+    const currentStatus = Array.isArray(gameState.status)
+        ? gameState.status[handIndex]
+        : gameState.status;
 
     return {
         gameId: gameState.gameId,
-        formattedPlayerCards: gameState.playerCards.map(
-            (card: { suit: string; value: keyof typeof valueMap }) => ({
+        formattedPlayerCards: {
+            firstHand: gameState.playerCards.firstHand.map((card: { value: string | number; }) => ({
                 ...card,
-                equal: valueMap[card.value] || 0,
-            })
-        ),
-        formattedDealerCards: dealerCards.map(
-            (card: { suit: string; value: keyof typeof valueMap }) => ({
+                equal: valueMap[card.value as keyof typeof valueMap] || 0,
+            })),
+            secondHand: gameState.playerCards.secondHand.map((card: { value: string | number; }) => ({
                 ...card,
-                equal: valueMap[card.value] || 0,
-            })
-        ),
+                equal: valueMap[card.value as keyof typeof valueMap] || 0,
+            })),
+        },
+        formattedDealerCards: dealerCards.map((card: { value: string | number; }) => ({
+            ...card,
+            equal: valueMap[card.value as keyof typeof valueMap] || 0,
+        })),
         playerHandValue: gameState.playerHandValue,
         dealerHandValue: gameState.dealerHandValue,
         hash: gameState.hash,
-        status,
+        status: gameState.status,
+        gameStatus: currentStatus,
     };
 };
+
 
 export const splitCards = async (gameState: any) => {
     const { playerCards, remainingDeck } = gameState;
@@ -308,22 +358,23 @@ export const splitCards = async (gameState: any) => {
     }
 
     // Split the player's cards into two hands
-    const firstHand = [playerCards[0], remainingDeck.pop()];
-    const secondHand = [playerCards[1], remainingDeck.pop()];
+    const firstHand = [playerCards?.firstHand[0], remainingDeck.pop()];
+    const secondHand = [playerCards?.firstHand[1], remainingDeck.pop()];
 
-    // Calculate the hand values for both hands
+    console.log("First hand:", firstHand);
+    console.log("Second hand:", secondHand);
+
     const firstHandValue = calculateHandValue(firstHand);
     const secondHandValue = calculateHandValue(secondHand);
 
     await setObject(`${gameKey}:${gameState.id_user}`, {
         ...gameState,
+        playerHandValue: [firstHandValue, secondHandValue],
         playerCards: {
             firstHand,
             secondHand,
         },
         remainingDeck,
-        firstHandValue,
-        secondHandValue,
     });
 
     return {
@@ -356,4 +407,116 @@ export const splitCards = async (gameState: any) => {
         hash: gameState.hash,
         status: gameState.status,
     };
-}
+};
+
+export const doubleDown = async (gameState: any, handIndex: number = 0, splitMode: boolean = false) => {
+    const { remainingDeck, playerCards } = gameState;
+    if (remainingDeck.length === 0) {
+        throw new Error("No cards left in the deck.");
+    }
+
+    gameState.bet_amount *= 2;
+
+    const hand =
+        handIndex === 0
+            ? gameState.playerCards.firstHand
+            : gameState.playerCards.secondHand;
+
+    const card = remainingDeck.pop();
+    hand.push(card);
+
+    gameState.playerHandValue[handIndex] = calculateHandValue(hand);
+
+    if (gameState.playerHandValue[handIndex] > 21) {
+        gameState.status = splitMode ? [...(gameState.status || []), "bust"] : "bust";
+    } else if (splitMode && handIndex === 0) {
+        // If in split mode and doubling the first hand, set status to "stand" for this hand
+        if (!Array.isArray(gameState.status)) {
+            gameState.status = [];
+        }
+        gameState.status[handIndex] = "stand";
+    } else {
+        const { dealerCards, dealerHiddenCard } = gameState;
+
+        if (!splitMode || handIndex === 1) {
+            if (dealerHiddenCard) {
+                dealerCards.push(dealerHiddenCard);
+                gameState.dealerHiddenCard = null;
+            }
+            gameState.dealerHandValue = calculateHandValue(dealerCards);
+
+            while (gameState.dealerHandValue < 17) {
+                const newCard = remainingDeck.pop();
+                dealerCards.push(newCard);
+                gameState.dealerHandValue = calculateHandValue(dealerCards);
+            }
+        }
+
+        const playerHandValue = gameState.playerHandValue[handIndex];
+        const dealerBusted = gameState.dealerHandValue > 21;
+
+        let handStatus = "push";
+        if (dealerBusted) {
+            handStatus = "dealer_bust";
+        } else if (playerHandValue > gameState.dealerHandValue) {
+            handStatus = "win";
+        } else if (playerHandValue < gameState.dealerHandValue) {
+            handStatus = "lose";
+        }
+
+        if (splitMode) {
+            if (!Array.isArray(gameState.status)) {
+                gameState.status = [];
+            }
+            gameState.status[handIndex] = handStatus;
+
+            if (handIndex === 1 && gameState.status[0] === "stand") {
+                const firstHandValue = gameState.playerHandValue[0];
+                const firstHandBusted = firstHandValue > 21;
+
+                if (firstHandBusted) {
+                    gameState.status[0] = "bust";
+                } else if (dealerBusted) {
+                    gameState.status[0] = "dealer_bust";
+                } else if (firstHandValue > gameState.dealerHandValue) {
+                    gameState.status[0] = "win";
+                } else if (firstHandValue < gameState.dealerHandValue) {
+                    gameState.status[0] = "lose";
+                } else {
+                    gameState.status[0] = "push";
+                }
+            }
+        } else {
+            gameState.status = handStatus;
+        }
+    }
+
+    await setObject(`${gameKey}:${gameState.id_user}`, {
+        ...gameState,
+        playerCards,
+        remainingDeck,
+        status: gameState.status,
+    });
+
+    return {
+        gameId: gameState.gameId,
+        playerCards: {
+            firstHand: gameState.playerCards.firstHand.map((card: { value: string | number }) => ({
+                ...card,
+                equal: valueMap[card.value as keyof typeof valueMap] || 0,
+            })),
+            secondHand: gameState.playerCards.secondHand.map((card: { value: string | number }) => ({
+                ...card,
+                equal: valueMap[card.value as keyof typeof valueMap] || 0,
+            })),
+        },
+        dealerCards: gameState.dealerCards.map((card: { value: string | number }) => ({
+            ...card,
+            equal: valueMap[card.value as keyof typeof valueMap] || 0,
+        })),
+        dealerHandValue: gameState.dealerHandValue,
+        playerHandValue: gameState.playerHandValue,
+        hash: gameState.hash,
+        gameStatus: gameState.status,
+    };
+};
