@@ -8,13 +8,16 @@ import cors from "cors";
 import discordRouter from "./api/v1/routes/account/oauth/discord";
 import blackjackRouter from "./api/v1/routes/blackjack/route";
 import coinflipRouter from "./api/v1/routes/coinflip/route";
+import { Server } from 'socket.io';
+import { createServer } from 'http';
+import initSocket from "./socket";
 
 
+const PORT = 3000;
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
 
 app.use(express.json());
 app.use(cors());
@@ -39,6 +42,17 @@ app.use(`${API_BASE_PATH}/account/discord`, discordRouter);
 app.use(`${API_BASE_PATH}/blackjack`, authenticateToken, blackjackRouter);
 app.use(`${API_BASE_PATH}/coinflip`, authenticateToken, coinflipRouter);
 
-app.listen(PORT, () => {
+/** Websocket route */
+const server = createServer(app);
+const io = new Server(server, {
+	  cors: {
+	origin: "*",
+	methods: ["GET", "POST"]
+  }
+});
+
+server.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
 });
+
+initSocket(io);

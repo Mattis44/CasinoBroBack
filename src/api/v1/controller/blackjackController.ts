@@ -37,7 +37,7 @@ export const shuffleDeck = (deck: any[]) => {
 };
 
 const suits = ["spades", "hearts", "diamonds", "clubs"];
-const valuesA = [
+const values = [
     "A",
     "2",
     "3",
@@ -51,21 +51,6 @@ const valuesA = [
     "J",
     "Q",
     "K",
-];
-const values = [
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
-    "2",
 ];
 
 const valueMap = {
