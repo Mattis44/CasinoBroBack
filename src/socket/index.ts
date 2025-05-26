@@ -51,10 +51,18 @@ export default function initSocket(io: Server) {
         }
     });
     io.on("connection", (socket) => {
-        console.log("A user connected");
+        io.emit("user:online", {
+            user: socket.data.user,
+            id_user: socket.data.user.id_user,
+            timestamp: new Date().toISOString(),
+        });
         chatSocketHandler(io, socket);
         socket.on("disconnect", () => {
-            console.log("A user disconnected");
+            io.emit("user:offline", {
+                user: socket.data.user,
+                id_user: socket.data.user.id_user,
+                timestamp: new Date().toISOString(),
+            });
         });
     });
 }
