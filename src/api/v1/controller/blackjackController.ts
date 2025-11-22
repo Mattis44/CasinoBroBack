@@ -156,7 +156,6 @@ export const initBlackjackGame = async (
         };
         if (playerHandValue[0] === 21) {
             status = "blackjack";
-            // Add logic to handle blackjack win
         } else {
             await setObject(`${gameKey}:${id_user}`, gameState);
         }
@@ -279,7 +278,6 @@ export const stand = async (
         }
         gameState.status[handIndex] = handStatus;
 
-        // Check the status of the first hand if handIndex is 1
         if (handIndex === 1 && gameState.status[0] === "stand") {
             const firstHandValue = gameState.playerHandValue[0];
             const firstHandBusted = firstHandValue > 21;
@@ -415,7 +413,7 @@ export const doubleDown = async (gameState: any, handIndex: number = 0, splitMod
     if (gameState.playerHandValue[handIndex] > 21) {
         gameState.status = splitMode ? [...(gameState.status || []), "bust"] : "bust";
     } else if (splitMode && handIndex === 0) {
-        // If in split mode and doubling the first hand, set status to "stand" for this hand
+        /**  If in split mode and doubling the first hand, set status to "stand" for this hand  */
         if (!Array.isArray(gameState.status)) {
             gameState.status = [];
         }

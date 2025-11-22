@@ -19,7 +19,6 @@ import { IDecodedToken } from "../../interfaces/IDecodedToken";
 
 const accountRouter = express.Router();
 
-// Login an user
 accountRouter.post("/login", async (req, res) => {
     try {
         const loginUser: IUser = {
@@ -59,7 +58,6 @@ accountRouter.post("/login", async (req, res) => {
     }
 });
 
-// Registed an user
 accountRouter.post("/register", async (req, res) => {
     console.log(req.query);
 
@@ -148,7 +146,6 @@ accountRouter.post("/me", async (req, res) => {
     }
 });
 
-//Update an user
 accountRouter.put("/update", async (req, res) => {
     try {
         const user: IUser = await getUserByUsername(

@@ -15,7 +15,6 @@ const userRouter = express.Router();
 // 	}
 // });
 
-// Get user by id
 userRouter.get("/", async (req, res) => {
 	try {
 		const { id_user } = await decodeToken(req);

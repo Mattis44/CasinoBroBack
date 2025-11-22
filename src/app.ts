@@ -42,7 +42,6 @@ app.use(`${API_BASE_PATH}/account/discord`, discordRouter);
 app.use(`${API_BASE_PATH}/blackjack`, authenticateToken, blackjackRouter);
 app.use(`${API_BASE_PATH}/coinflip`, authenticateToken, coinflipRouter);
 
-/** Websocket route */
 const server = createServer(app);
 const io = new Server(server, {
 	  cors: {
