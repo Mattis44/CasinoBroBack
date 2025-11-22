@@ -1,0 +1,71 @@
+/* scrollbar */
+@import 'simplebar-react/dist/simplebar.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ribbon {
+    font-size: 28px;
+    font-weight: bold;
+    color: #fff;
+  }
+  .ribbon {
+    --s: 1.2em; /* the ribbon size */
+    --d: .4em;  /* the depth */
+    --c: .3em;  /* the cutout part */
+    
+    padding: 0 calc(var(--s) + .5em) var(--d);
+    line-height: 1.8;
+    background:
+      conic-gradient(at left  var(--s) bottom var(--d),
+       #0000 25%,#0008 0 37.5%,#0004 0) 0   /50% 100% no-repeat,
+      conic-gradient(at right var(--s) bottom var(--d),
+       #0004 62.5%,#0008 0 75%,#0000 0) 100%/50% 100% no-repeat;
+    clip-path: polygon(0 var(--d), var(--s) var(--d),var(--s) 0,calc(100% - var(--s)) 0,calc(100% - var(--s)) var(--d),100% var(--d),calc(100% - var(--c)) calc(50% + var(--d)/2),100% 100%,calc(100% - var(--s) - var(--d)) 100%,calc(100% - var(--s) - var(--d)) calc(100% - var(--d)),calc(var(--s) + var(--d)) calc(100% - var(--d)),calc(var(--s) + var(--d)) 100%,0 100%,var(--c) calc(50% + var(--d)/2));
+    background-color: #55525369; /* the main color */
+    width: fit-content;
+  }
+
+  @keyframes fly-to-player-0 {
+    0% { top: 20px; left: 20px; }
+    100% { top: 70%; left: 45%; }
+  }
+  @keyframes fly-to-player-1 {
+    0% { top: 20px; left: 20px; }
+    100% { top: 70%; left: 55%; }
+  }
+  
+  @keyframes fly-to-dealer-0 {
+    0% { top: 20px; left: 20px; }
+    100% { top: 15%; left: 45%; }
+  }
+  @keyframes fly-to-dealer-1 {
+    0% { top: 20px; left: 20px; }
+    100% { top: 15%; left: 55%; }
+  }
+  
+  /* Conteneur des suggestions */
+.mentions__suggestions {
+  position: absolute;
+  background-color: #fff; /* change si thème sombre */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Élément suggestion */
+.mentions__suggestions__item {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Élément survolé/actif */
+.mentions__suggestions__item--focused {
+  background-color: #1DA1F2;
+  color: #fff;
+}
+
