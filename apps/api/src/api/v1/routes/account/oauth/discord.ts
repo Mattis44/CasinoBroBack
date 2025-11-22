@@ -24,8 +24,8 @@ discordRouter.post("/register", async (req, res) => {
 			str_username: user_datas.username,
 			str_email: user_datas.email,
 		};
-		const newUser: IUser = await createUser(user);
-		if (newUser === null) {
+		const newUser = await createUser(user);
+		if (!newUser) {
 			res.status(403);
 		}
 		res.json(newUser);
@@ -70,7 +70,7 @@ discordRouter.post("/me", async (req, res) => {
 			});
 		}
 		const user_datas = await result.json();
-		const user: IUser = await getUserByUsername(user_datas.user.username);
+		const user = await getUserByUsername(user_datas.user.username);
 
 		res.json({
 			access_token: access_token,

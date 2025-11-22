@@ -1,35 +1,40 @@
-// redisClient.ts
 import { createClient } from 'redis';
 import dotenv from 'dotenv';
-dotenv.config();
-const redisClient = createClient({
-    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-    password: process.env.REDIS_PASSWORD,
-});
 
-redisClient.connect().then(() => {
-  console.log('Connected to Redis');
+dotenv.config();
+
+const host = process.env.REDIS_HOST || "localhost";
+const port = process.env.REDIS_PORT || "6379";
+const password = process.env.REDIS_PASSWORD || undefined;
+
+const url = process.env.REDIS_URL || `redis://${host}:${port}`;
+
+const redisClient = createClient({
+    url,
+    password,
 });
 
 redisClient.on('error', (err: any) => {
-  console.error('Redis error:', err);
+    console.error('Redis error:', err);
 });
 
 redisClient.on('ready', () => {
-  console.log('Redis client is ready');
+    console.log('Redis client is ready');
 });
 
-// Function to set an object in Redis
+redisClient.connect()
+    .then(() => console.log(`Connected to Redis at ${url}`))
+    .catch((err) => console.error("Redis connection failed:", err));
+
+
 export async function setObject(key: string, obj: any) {
     try {
-        await redisClient.set(key, JSON.stringify(obj), {EX: 60 * 60});
-        console.log(`Object set for key: ${key}`);
+        await redisClient.set(key, JSON.stringify(obj), { EX: 60 * 60 });
     } catch (err) {
         console.error('Error setting object:', err);
     }
 }
 
-// Function to get an object from Redis
 export async function getObject(key: string) {
     try {
         const data = await redisClient.get(key);
@@ -40,17 +45,14 @@ export async function getObject(key: string) {
     }
 }
 
-// Function to delete a key from Redis
 export async function deleteKey(key: string) {
     try {
         await redisClient.del(key);
-        console.log(`Key deleted: ${key}`);
     } catch (err) {
         console.error('Error deleting key:', err);
     }
 }
 
-// Function to check if a key exists
 export async function keyExists(key: string) {
     try {
         const exists = await redisClient.exists(key);

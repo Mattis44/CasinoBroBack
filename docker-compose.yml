@@ -1,0 +1,97 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./apps/api
+    container_name: api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-default_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  front:
+    build:
+      context: ./apps/front
+    container_name: front
+    restart: unless-stopped
+    ports:
+      - "3031:3031"
+    volumes:
+      - ./apps/front:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-mydb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # prisma-studio:
+  #   image: node:lts-alpine3.17
+  #   working_dir: /app
+  #   volumes:
+  #     - ./apps/api:/app
+  #   command: npx prisma studio --port 5555 --browser none
+  #   ports:
+  #     - "5555:5555"
+  #   env_file:
+  #     - .env.prod
+  #   networks:
+  #     - prisma-network
+  #   depends_on:
+  #     postgres_db:
+  #       condition: service_healthy
+  #     server:
+  #       condition: service_started
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

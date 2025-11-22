@@ -59,15 +59,18 @@ accountRouter.post("/login", async (req, res) => {
 });
 
 accountRouter.post("/register", async (req, res) => {
-    console.log(req.query);
-
     try {
         const user: IUser = {
             str_username: req.query.str_username as string,
             str_email: req.query.str_email as string,
             str_password: await hashPassword(req.query.str_password as string),
         };
-        const newUser: IUser = await createUser(user);
+        
+        const newUser = await createUser(user);
+
+        if (!newUser) {
+            return res.status(500).json("Error creating user");
+        }
 
         res.json({
             token_access: await generateToken({
@@ -100,10 +103,10 @@ accountRouter.post("/me", async (req, res) => {
             const verif_access = await verifyToken(accessToken);
             const user = await getUserById(verif_access.id_user);
             const formattedUser: IUser = {
-                id_user: user.id_user,
-                str_username: user.str_username,
-                str_email: user.str_email,
-                bl_admin: user.bl_admin,
+                id_user: user?.id_user,
+                str_username: user?.str_username || "Anonymous",
+                str_email: user?.str_email,
+                bl_admin: user?.bl_admin,
             };
             const UpdatedAccessToken = await generateToken({
                 ...formattedUser,
@@ -121,10 +124,10 @@ accountRouter.post("/me", async (req, res) => {
                 );
                 const user = await getUserById(verif_refresh.id_user);
                 const formattedUser: IUser = {
-                    id_user: user.id_user,
-                    str_username: user.str_username,
-                    str_email: user.str_email,
-                    bl_admin: user.bl_admin,
+                    id_user: user?.id_user,
+                    str_username: user?.str_username || "Anonymous",
+                    str_email: user?.str_email,
+                    bl_admin: user?.bl_admin,
                 };
                 const UpdatedAccessToken = await generateToken({
 					...formattedUser,
@@ -148,10 +151,10 @@ accountRouter.post("/me", async (req, res) => {
 
 accountRouter.put("/update", async (req, res) => {
     try {
-        const user: IUser = await getUserByUsername(
+        const user = await getUserByUsername(
             req.query.str_username as string
         );
-        if (user.id_user === "-1") {
+        if (!user) {
             res.json("Username is incorrect");
         } else {
             if (

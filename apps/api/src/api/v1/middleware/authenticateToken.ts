@@ -29,7 +29,7 @@ export const authenticateToken = (
 				})
 				.then(async (data) => {
 					req.user = data;
-					req.body.id_user = (await getUserByUsername(data.user.username)).id_user
+					req.body.id_user = (await getUserByUsername(data.user.username))?.id_user;
 					next();
 				})
 				.catch((error) => {

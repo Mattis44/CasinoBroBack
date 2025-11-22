@@ -18,7 +18,10 @@ const userRouter = express.Router();
 userRouter.get("/", async (req, res) => {
 	try {
 		const { id_user } = await decodeToken(req);
-		const user: IUser = await getUserById(id_user);
+		const user = await getUserById(id_user);
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
 		const formattedUser: IUser = {
 			str_username: user.str_username,
 			date_creation: user.date_creation,

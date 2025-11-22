@@ -1,0 +1,7 @@
+node_modules
+dist
+.prisma
+*.log
+npm-debug.log
+Dockerfile
+.dockerignore

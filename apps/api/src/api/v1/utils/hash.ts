@@ -21,7 +21,7 @@ export async function comparePassword(
 }
 
 export async function generateToken(payload: string | object): Promise<string> {
-	return jwt.sign(payload, process.env.JWT_ACCESS_SECRET as string, {
+	return jwt.sign(payload, process.env.JWT_SECRET as string, {
 		expiresIn: "15m",
 	});
 }
@@ -29,7 +29,7 @@ export async function generateToken(payload: string | object): Promise<string> {
 export async function generateRefreshToken(
 	payload: string | object
 ): Promise<string> {
-	return jwt.sign(payload, process.env.JWT_REFRESH_SECRET as string, {
+	return jwt.sign(payload, process.env.JWT_EXPIRES_IN as string, {
 		expiresIn: "7d",
 	});
 }
@@ -37,14 +37,14 @@ export async function generateRefreshToken(
 export async function verifyToken(token: string): Promise<IDecodedToken> {
 	return jwt.verify(
 		token,
-		process.env.JWT_ACCESS_SECRET as string
+		process.env.JWT_SECRET as string
 	) as IDecodedToken;
 }
 
 export async function verifyRefreshToken(token: string): Promise<IDecodedToken> {
 	return jwt.verify(
 		token,
-		process.env.JWT_REFRESH_SECRET as string
+		process.env.JWT_EXPIRES_IN as string
 	) as IDecodedToken;
 }
 
