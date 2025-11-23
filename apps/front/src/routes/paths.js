@@ -23,6 +23,7 @@ export const paths = {
   dashboard: {
     root: ROOTS.DASHBOARD,
     general: {
+      slots: `${ROOTS.DASHBOARD}/slots`,
       blackjack: `${ROOTS.DASHBOARD}/blackjack`,
       coinflip: `${ROOTS.DASHBOARD}/coinflip`,
       chat: `${ROOTS.DASHBOARD}/chat`,

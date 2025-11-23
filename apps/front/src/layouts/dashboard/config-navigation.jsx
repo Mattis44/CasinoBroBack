@@ -58,6 +58,7 @@ export function useNavData() {
         subheader: 'PLAY',
         items: [
           { title: 'Games', path: paths.dashboard.root, icon: ICONS.analytics },
+          { title: 'Slots', path: paths.dashboard.general.slots, icon: ICONS.job },
           { title: 'Blackjack', path: paths.dashboard.general.blackjack, icon: ICONS.product },
           { title: 'Coin Flip', path: paths.dashboard.general.coinflip, icon: ICONS.order },
           {

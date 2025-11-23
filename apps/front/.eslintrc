@@ -58,6 +58,8 @@
     "import/order": 0,
     "import/no-self-import": 0,
     "import/no-relative-packages": 0,
+    "no-plusplus": 0,
+    "one-var": 0,
     "react/jsx-no-useless-fragment": [
       1,
       {

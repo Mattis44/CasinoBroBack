@@ -22,4 +22,4 @@ clean:
 
 dev:
 	@echo "Starting development environment..."
-	docker-compose up --build
+	docker-compose up --build --watch

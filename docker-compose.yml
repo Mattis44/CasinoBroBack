@@ -5,7 +5,7 @@ services:
     build:
       context: ./apps/api
     container_name: api
-    restart: unless-stopped
+    restart: no
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
       JWT_SECRET: ${JWT_SECRET:-default_secret}
@@ -22,23 +22,35 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api/src
+          target: /app/src
+        - action: rebuild
+          path: ./apps/api/package.json
 
   front:
     build:
       context: ./apps/front
-    container_name: front
-    restart: unless-stopped
+      dockerfile: Dockerfile.dev
+    command: npm run dev -- --host
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/front/src
+          target: /usr/src/app/src
+        - action: sync
+          path: ./apps/front/index.html
+          target: /usr/src/app/index.html
+        - action: rebuild
+          path: ./apps/front/package.json
+    volumes:
+      - /usr/src/app/node_modules
     ports:
       - "3031:3031"
-    volumes:
-      - ./apps/front:/app
-      - /app/node_modules
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
-    depends_on:
-      - api
-    networks:
-      - app-network
+
+
 
   postgres:
     image: postgres:16-alpine
